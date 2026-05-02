@@ -898,8 +898,8 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
         </div>
       </div>
 
-      {/* Tournament banner */}
-      {(tournament || tournamentStatus === "none") && (
+      {/* Tournament banner — only shown to logged-in users */}
+      {loggedIn && (tournament || tournamentStatus === "none") && (
         <div className="text-center py-1 px-2 flex-shrink-0">
           {tournament ? (
             <span className={`text-xs font-bold px-3 py-0.5 rounded ${
