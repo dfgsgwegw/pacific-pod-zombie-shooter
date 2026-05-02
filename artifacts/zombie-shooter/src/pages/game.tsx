@@ -16,6 +16,14 @@ interface Bubble { x: number; y: number; r: number; vy: number; alpha: number }
 const CW = 780;
 const CH = 560;
 
+const CHARACTERS = [
+  { id: "og",    name: "OG Pod",    src: "/assets/shooter.png",                       color: "#b060ff", bg: "rgba(140,60,255,0.25)" },
+  { id: "mvp",   name: "POD MVP",   src: "/assets/characters/pod-mvp.jpg",            color: "#4499ff", bg: "rgba(40,120,255,0.25)" },
+  { id: "stone", name: "Stone Pod", src: "/assets/characters/stone-pod.jpg",          color: "#aaaaaa", bg: "rgba(150,150,150,0.25)" },
+  { id: "fire",  name: "Fire Pod",  src: "/assets/characters/fire-pod.jpg",           color: "#ff6600", bg: "rgba(255,80,0,0.25)" },
+  { id: "squad", name: "The Squad", src: "/assets/characters/squad-pod.jpg",          color: "#ff88cc", bg: "rgba(255,80,180,0.25)" },
+];
+
 /* ── Audio ─────────────────────────────────────────────────────── */
 let audioCtx: AudioContext | null = null;
 function getAudioCtx(): AudioContext {
@@ -209,6 +217,9 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const isMobileRef = useRef(false);
+  const [selectedChar, setSelectedChar] = useState(0);
+  const selectedCharRef = useRef(0);
+  const charImgs = useRef<HTMLImageElement[]>([]);
 
   const sessionTokenRef = useRef<string | null>(null);
 
@@ -244,7 +255,9 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
   }, []);
 
   useEffect(() => {
-    shooterImg.current.src = "/assets/shooter.png";
+    // Preload all character images
+    charImgs.current = CHARACTERS.map(c => { const img = new Image(); img.src = c.src; return img; });
+    shooterImg.current = charImgs.current[0];
     zombieImg.current.src = "/assets/zombie.png";
     bgImg.current.src = "/assets/background.png";
 
@@ -522,17 +535,18 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       ctx.globalAlpha = 1;
     }
 
-    // Shooter — back-view sprite faces upward naturally; flip for left/right lean
+    // Shooter — use selected character image, flip for left/right lean
     {
       const sh = s.shooter;
       const dir = s.lastDir;
+      const img = charImgs.current[selectedCharRef.current] ?? shooterImg.current;
       ctx.save();
       if (dir === -1) {
         ctx.translate(sh.x + sh.w, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(shooterImg.current, 0, sh.y, sh.w, sh.h);
+        ctx.drawImage(img, 0, sh.y, sh.w, sh.h);
       } else {
-        ctx.drawImage(shooterImg.current, sh.x, sh.y, sh.w, sh.h);
+        ctx.drawImage(img, sh.x, sh.y, sh.w, sh.h);
       }
       ctx.restore();
 
@@ -819,50 +833,109 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
 
               {/* Menu */}
               {gameState === "menu" && (
-                <div className="absolute inset-0 rounded-lg flex items-center justify-center" style={overlayBg}>
-                  <div className="absolute inset-0 rounded-lg" style={{ background: "rgba(0,5,15,0.72)" }} />
-                  <div className="relative z-10 rounded-xl p-5 sm:p-10 text-center mx-4 border"
-                    style={{ background: "rgba(0,10,25,0.88)", borderColor: "rgba(0,200,255,0.35)", boxShadow: "0 0 40px rgba(0,200,255,0.15)" }}>
-                    <p className="text-xs font-bold tracking-widest mb-1" style={{ color: "rgba(0,200,255,0.6)" }}>PACIFIC POD NFT PRESENTS</p>
-                    <h2 className="text-3xl sm:text-4xl font-black tracking-widest mb-1"
-                      style={{ color: "#00d4ff", textShadow: "0 0 30px rgba(0,212,255,0.8)" }}>PACIFIC</h2>
-                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-widest mb-4">ZOMBIE FIGHTER</h3>
-                    {isMobile ? (
-                      <p className="text-white/40 text-xs mb-5">
-                        Hold ◀ ▶ to move · gun fires automatically
+                <div className="absolute inset-0 rounded-lg flex items-center justify-center overflow-hidden" style={overlayBg}>
+                  {/* Dark ocean overlay */}
+                  <div className="absolute inset-0 rounded-lg" style={{ background: "rgba(0,3,12,0.78)" }} />
+                  {/* Poster glow rays */}
+                  <div className="absolute inset-0 rounded-lg" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 30%, rgba(0,180,255,0.10) 0%, transparent 70%)" }} />
+
+                  <div className="relative z-10 w-full max-w-lg mx-2 flex flex-col items-center">
+
+                    {/* ── POSTER HEADER ── */}
+                    <p className="text-[10px] sm:text-xs font-black tracking-[0.3em] mb-1" style={{ color: "rgba(0,200,255,0.55)" }}>
+                      PACIFIC POD NFT PRESENTS
+                    </p>
+                    <div className="text-center leading-none mb-0.5">
+                      <span className="block font-black tracking-[0.25em] text-4xl sm:text-5xl"
+                        style={{ color: "#00d4ff", textShadow: "0 0 40px rgba(0,212,255,0.9), 0 0 80px rgba(0,150,255,0.4)" }}>
+                        PACIFIC PODS
+                      </span>
+                      <span className="block font-black tracking-[0.15em] text-2xl sm:text-3xl text-white mt-0.5"
+                        style={{ textShadow: "0 0 20px rgba(255,255,255,0.3)" }}>
+                        ZOMBIE SHOOTER
+                      </span>
+                    </div>
+                    <div className="flex gap-1 mb-3 mt-1">
+                      {[...Array(5)].map((_, i) => <span key={i} className="text-yellow-400 text-xs">★</span>)}
+                    </div>
+
+                    {/* ── CHARACTER SELECT ── */}
+                    <div className="w-full rounded-xl border mb-3 overflow-hidden"
+                      style={{ background: "rgba(0,8,20,0.85)", borderColor: "rgba(0,200,255,0.2)" }}>
+                      <p className="text-[10px] font-black tracking-widest uppercase text-center py-1.5"
+                        style={{ color: "rgba(0,200,255,0.6)", background: "rgba(0,40,70,0.5)", borderBottom: "1px solid rgba(0,200,255,0.15)" }}>
+                        ⚡ Choose Your Pod
                       </p>
-                    ) : (
-                      <p className="text-white/40 text-xs sm:text-sm mb-5">
-                        <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">A</kbd>{" / "}
-                        <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">D</kbd>{" "}
-                        or arrows to move ·{" "}
-                        <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Click</kbd> to shoot
-                      </p>
-                    )}
-                    {loggedIn && canPlay && (
-                      <button onClick={startGame}
-                        className="font-black px-8 py-3 rounded text-lg tracking-widest transition uppercase text-black mb-3 block w-full"
-                        style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)", boxShadow: "0 0 30px rgba(0,180,255,0.4)" }}>
-                        Enter the Deep
-                      </button>
-                    )}
-                    {loggedIn && !canPlay && (
-                      <div className="text-white/40 text-sm border border-white/10 px-6 py-3 rounded mb-3">
-                        {tournamentStatus === "upcoming" ? "Tournament hasn't started yet" : "No active tournament"}
+                      <div className="flex justify-center gap-2 p-3 flex-wrap">
+                        {CHARACTERS.map((c, i) => (
+                          <button
+                            key={c.id}
+                            onClick={() => { setSelectedChar(i); selectedCharRef.current = i; }}
+                            title={c.name}
+                            className="flex flex-col items-center gap-1 transition-all"
+                            style={{ outline: "none" }}
+                          >
+                            <div className="rounded-xl overflow-hidden transition-all"
+                              style={{
+                                width: 60, height: 60,
+                                border: selectedChar === i ? `3px solid ${c.color}` : "3px solid rgba(255,255,255,0.08)",
+                                boxShadow: selectedChar === i ? `0 0 16px ${c.color}88` : "none",
+                                background: c.bg,
+                                transform: selectedChar === i ? "scale(1.12)" : "scale(1)",
+                              }}>
+                              <img
+                                src={c.src}
+                                alt={c.name}
+                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                              />
+                            </div>
+                            <span className="text-[9px] font-bold tracking-wide"
+                              style={{ color: selectedChar === i ? c.color : "rgba(255,255,255,0.35)" }}>
+                              {c.name}
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                    )}
-                    <button onClick={startDemoGame}
-                      className="font-black px-8 py-2.5 rounded text-base tracking-widest transition uppercase border w-full"
-                      style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(0,200,255,0.3)", color: "rgba(0,212,255,0.8)" }}>
-                      🎮 Play Demo
-                    </button>
-                    {!loggedIn && (
-                      <p className="text-white/25 text-xs mt-2">
-                        Scores not saved ·{" "}
-                        <span className="text-cyan-500/50" onClick={() => setShowSidebar(true)} style={{ cursor: "pointer" }}>Login</span>{" "}
-                        to compete
+                    </div>
+
+                    {/* ── CONTROLS HINT ── */}
+                    {isMobile ? (
+                      <p className="text-white/35 text-[11px] mb-3">Hold ◀ ▶ to move · gun fires automatically</p>
+                    ) : (
+                      <p className="text-white/35 text-[11px] mb-3">
+                        <kbd className="bg-white/10 px-1 py-0.5 rounded text-white/70">A</kbd>{" / "}
+                        <kbd className="bg-white/10 px-1 py-0.5 rounded text-white/70">D</kbd>{" or arrows to move · "}
+                        <kbd className="bg-white/10 px-1 py-0.5 rounded text-white/70">Click</kbd>{" to shoot"}
                       </p>
                     )}
+
+                    {/* ── PLAY BUTTONS ── */}
+                    <div className="w-full flex flex-col gap-2">
+                      {loggedIn && canPlay && (
+                        <button onClick={startGame}
+                          className="font-black py-3 rounded-xl text-base tracking-widest uppercase text-black transition w-full"
+                          style={{ background: `linear-gradient(135deg, ${CHARACTERS[selectedChar].color}, #0080ff)`, boxShadow: `0 0 24px ${CHARACTERS[selectedChar].color}66` }}>
+                          ⚔️ Enter the Deep
+                        </button>
+                      )}
+                      {loggedIn && !canPlay && (
+                        <div className="text-white/30 text-sm border border-white/10 px-6 py-3 rounded-xl text-center">
+                          {tournamentStatus === "upcoming" ? "Tournament hasn't started yet" : "No active tournament"}
+                        </div>
+                      )}
+                      <button onClick={startDemoGame}
+                        className="font-black py-2.5 rounded-xl text-sm tracking-widest uppercase border transition w-full"
+                        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(0,200,255,0.25)", color: "rgba(0,212,255,0.75)" }}>
+                        🎮 Play Demo
+                      </button>
+                      {!loggedIn && (
+                        <p className="text-white/20 text-[10px] text-center">
+                          Scores not saved ·{" "}
+                          <span className="text-cyan-500/50 cursor-pointer" onClick={() => setShowSidebar(true)}>Login</span>{" "}
+                          to compete
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
