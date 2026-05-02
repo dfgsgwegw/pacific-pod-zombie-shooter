@@ -26,8 +26,15 @@ if (!basePath) {
   );
 }
 
+// In Replit, use the dev domain so API calls go same-origin (no CORS preflight)
+const replitDevDomain = process.env.REPLIT_DEV_DOMAIN;
+const apiBase = replitDevDomain ? `https://${replitDevDomain}` : "";
+
 export default defineConfig({
   base: basePath,
+  define: {
+    "import.meta.env.VITE_API_URL": JSON.stringify(apiBase),
+  },
   plugins: [
     react(),
     tailwindcss(),
