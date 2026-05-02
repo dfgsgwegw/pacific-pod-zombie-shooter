@@ -498,37 +498,42 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       ctx.globalAlpha = 1;
     }
 
-    // Shooter (drawn on top, flipped to face movement direction)
+    // Shooter — rotate to face upward toward zombies, lean toward movement direction
     {
       const sh = s.shooter;
       const dir = s.lastDir; // 1 = right, -1 = left
+      const cx = sh.x + sh.w / 2;
+      const cy = sh.y + sh.h / 2;
+
+      // Rotate image so the side-profile character faces upward.
+      // Original image faces right → rotate -90° to face up, then lean ±20° by direction.
+      const angle = -Math.PI / 2 + dir * 0.32;
+
       ctx.save();
-      if (dir === -1) {
-        // Flip horizontally around the shooter's center so they face left
-        ctx.translate(sh.x + sh.w, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(shooterImg.current, 0, sh.y, sh.w, sh.h);
-      } else {
-        ctx.drawImage(shooterImg.current, sh.x, sh.y, sh.w, sh.h);
-      }
-      // Staff tip magic flash when just shot
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      // Draw image centred on pivot point
+      ctx.drawImage(shooterImg.current, -sh.w / 2, -sh.h / 2, sh.w, sh.h);
+      ctx.restore();
+
+      // Magic staff flash at the tip (now pointing upward above the character)
       if (performance.now() - s.lastShot < 120) {
-        const staffTipX = dir === 1 ? sh.x + sh.w * 0.78 : sh.x + sh.w * 0.22;
-        const staffTipY = sh.y + sh.h * 0.18;
-        ctx.restore();
+        // Staff tip is roughly above+slightly to the side when rotated up
+        const flashX = cx + dir * sh.w * 0.18;
+        const flashY = cy - sh.h * 0.52;
         ctx.save();
-        ctx.globalAlpha = 0.85;
-        const flash = ctx.createRadialGradient(staffTipX, staffTipY, 0, staffTipX, staffTipY, 18);
+        ctx.globalAlpha = 0.9;
+        const flash = ctx.createRadialGradient(flashX, flashY, 0, flashX, flashY, 20);
         flash.addColorStop(0, "rgba(255,180,255,1)");
         flash.addColorStop(0.5, "rgba(200,80,255,0.7)");
         flash.addColorStop(1, "rgba(120,0,200,0)");
         ctx.fillStyle = flash;
         ctx.beginPath();
-        ctx.arc(staffTipX, staffTipY, 18, 0, Math.PI * 2);
+        ctx.arc(flashX, flashY, 20, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
+        ctx.restore();
       }
-      ctx.restore();
     }
 
     // HUD
