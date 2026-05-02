@@ -504,54 +504,29 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       const dir = s.lastDir; // 1 = right, -1 = left
       ctx.save();
       if (dir === -1) {
-        // Flip horizontally around the shooter's center
+        // Flip horizontally around the shooter's center so they face left
         ctx.translate(sh.x + sh.w, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(shooterImg.current, 0, sh.y, sh.w, sh.h);
       } else {
         ctx.drawImage(shooterImg.current, sh.x, sh.y, sh.w, sh.h);
       }
-      // Draw gun in the raised hand (right hand of the character = left side when flipped)
-      // Gun position: upper-right of the character sprite (where the staff/hand is)
-      const gx = dir === 1 ? sh.x + sh.w * 0.72 : sh.x - sh.w * 0.12;
-      const gy = sh.y + sh.h * 0.35;
-      const gunDir = dir; // 1 = pointing right/up-right, -1 = pointing left/up-left
-      ctx.restore();
-      ctx.save();
-      ctx.translate(gx, gy);
-      // Rotate gun upward toward zombies with slight outward tilt
-      ctx.rotate(-Math.PI / 2 + gunDir * 0.32);
-      // Gun body
-      ctx.fillStyle = "#1a1a2e";
-      ctx.beginPath();
-      ctx.roundRect(-5, -18, 10, 22, 3);
-      ctx.fill();
-      // Barrel
-      ctx.fillStyle = "#374151";
-      ctx.beginPath();
-      ctx.roundRect(-3, -32, 6, 18, 2);
-      ctx.fill();
-      // Handle grip
-      ctx.fillStyle = "#4b2e0d";
-      ctx.beginPath();
-      ctx.roundRect(-4, 3, 8, 12, 2);
-      ctx.fill();
-      // Trigger guard
-      ctx.strokeStyle = "#374151";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 4, 5, 0, Math.PI);
-      ctx.stroke();
-      // Muzzle flash when just shot
-      if (performance.now() - s.lastShot < 80) {
-        ctx.fillStyle = "rgba(255,220,80,0.9)";
+      // Staff tip magic flash when just shot
+      if (performance.now() - s.lastShot < 120) {
+        const staffTipX = dir === 1 ? sh.x + sh.w * 0.78 : sh.x + sh.w * 0.22;
+        const staffTipY = sh.y + sh.h * 0.18;
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        const flash = ctx.createRadialGradient(staffTipX, staffTipY, 0, staffTipX, staffTipY, 18);
+        flash.addColorStop(0, "rgba(255,180,255,1)");
+        flash.addColorStop(0.5, "rgba(200,80,255,0.7)");
+        flash.addColorStop(1, "rgba(120,0,200,0)");
+        ctx.fillStyle = flash;
         ctx.beginPath();
-        ctx.ellipse(0, -32, 5, 8, 0, 0, Math.PI * 2);
+        ctx.arc(staffTipX, staffTipY, 18, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "rgba(255,255,200,0.6)";
-        ctx.beginPath();
-        ctx.ellipse(0, -34, 3, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.globalAlpha = 1;
       }
       ctx.restore();
     }
