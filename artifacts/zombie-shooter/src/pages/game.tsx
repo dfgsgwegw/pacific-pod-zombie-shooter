@@ -498,29 +498,24 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       ctx.globalAlpha = 1;
     }
 
-    // Shooter — rotate to face upward toward zombies, lean toward movement direction
+    // Shooter — back-view sprite faces upward naturally; flip for left/right lean
     {
       const sh = s.shooter;
-      const dir = s.lastDir; // 1 = right, -1 = left
-      const cx = sh.x + sh.w / 2;
-      const cy = sh.y + sh.h / 2;
-
-      // Rotate image so the side-profile character faces upward.
-      // Original image faces right → rotate -90° to face up, then lean ±20° by direction.
-      const angle = -Math.PI / 2 + dir * 0.32;
-
+      const dir = s.lastDir;
       ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(angle);
-      // Draw image centred on pivot point
-      ctx.drawImage(shooterImg.current, -sh.w / 2, -sh.h / 2, sh.w, sh.h);
+      if (dir === -1) {
+        ctx.translate(sh.x + sh.w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(shooterImg.current, 0, sh.y, sh.w, sh.h);
+      } else {
+        ctx.drawImage(shooterImg.current, sh.x, sh.y, sh.w, sh.h);
+      }
       ctx.restore();
 
-      // Magic staff flash at the tip (now pointing upward above the character)
+      // Magic staff glow flash when shooting
       if (performance.now() - s.lastShot < 120) {
-        // Staff tip is roughly above+slightly to the side when rotated up
-        const flashX = cx + dir * sh.w * 0.18;
-        const flashY = cy - sh.h * 0.52;
+        const flashX = dir === 1 ? sh.x + sh.w * 0.72 : sh.x + sh.w * 0.28;
+        const flashY = sh.y + sh.h * 0.1;
         ctx.save();
         ctx.globalAlpha = 0.9;
         const flash = ctx.createRadialGradient(flashX, flashY, 0, flashX, flashY, 20);
@@ -531,7 +526,6 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
         ctx.beginPath();
         ctx.arc(flashX, flashY, 20, 0, Math.PI * 2);
         ctx.fill();
-        ctx.globalAlpha = 1;
         ctx.restore();
       }
     }
