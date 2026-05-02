@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "node vercel-build.mjs",
   "outputDirectory": "artifacts/zombie-shooter/dist/public",
-  "installCommand": "npm install -g pnpm && pnpm install",
+  "installCommand": "npm install -g pnpm && pnpm install --no-frozen-lockfile",
   "functions": {
     "api/index.js": {
       "maxDuration": 30,
