@@ -1,6 +1,6 @@
 /**
  * Vercel serverless entry point for the API.
- * Does NOT use pino (worker threads break in serverless) — uses console.log instead.
+ * Plain JS — avoids TypeScript compilation issues with deep import chains.
  * Imports routes directly from the api-server package.
  */
 import express from "express";
