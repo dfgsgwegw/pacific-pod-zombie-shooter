@@ -68,89 +68,6 @@ function playMagicShot() {
   } catch {}
 }
 
-function playZombieHit() {
-  try {
-    const ctx = getAudioCtx();
-    const t = ctx.currentTime;
-    // Wet slime splat
-    const bufferSize = ctx.sampleRate * 0.12;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(600, t);
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.5, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-    src.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    src.start(t);
-  } catch {}
-}
-
-function playZombieDeath() {
-  try {
-    const ctx = getAudioCtx();
-    const t = ctx.currentTime;
-    // Short strangled shriek — pitch shoots up then cuts dead
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const dist = ctx.createWaveShaper();
-    const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) { const x = (i * 2) / 256 - 1; curve[i] = (Math.PI + 80) * x / (Math.PI + 80 * Math.abs(x)); }
-    dist.curve = curve;
-    osc.type = "sawtooth";
-    const base = 180 + Math.random() * 80;
-    osc.frequency.setValueAtTime(base, t);
-    osc.frequency.exponentialRampToValueAtTime(base * 2.4, t + 0.08);  // quick shriek up
-    osc.frequency.exponentialRampToValueAtTime(base * 0.6, t + 0.22);  // drop off dead
-    gain.gain.setValueAtTime(0.0, t);
-    gain.gain.linearRampToValueAtTime(0.32, t + 0.03);
-    gain.gain.setValueAtTime(0.32, t + 0.08);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    osc.connect(dist); dist.connect(gain); gain.connect(ctx.destination);
-    osc.start(t); osc.stop(t + 0.3);
-    // splat noise burst underneath
-    const bufSize = ctx.sampleRate * 0.1;
-    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 1.5);
-    const noise = ctx.createBufferSource();
-    noise.buffer = buf;
-    const nf = ctx.createBiquadFilter();
-    nf.type = "bandpass"; nf.frequency.value = 800; nf.Q.value = 0.8;
-    const ng = ctx.createGain();
-    ng.gain.setValueAtTime(0.4, t);
-    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-    noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
-    noise.start(t);
-  } catch {}
-}
-
-function playZombieMoan() {
-  try {
-    const ctx = getAudioCtx();
-    const t = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    const base = 80 + Math.random() * 40;
-    osc.frequency.setValueAtTime(base, t);
-    osc.frequency.setValueAtTime(base * 0.85, t + 0.15);
-    osc.frequency.setValueAtTime(base * 1.1, t + 0.3);
-    gain.gain.setValueAtTime(0.0, t);
-    gain.gain.linearRampToValueAtTime(0.18, t + 0.08);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + 0.55);
-  } catch {}
-}
 
 function playDamage() {
   try {
@@ -170,45 +87,6 @@ function playDamage() {
   } catch {}
 }
 
-function playZombieScream() {
-  try {
-    const ctx = getAudioCtx();
-    const t = ctx.currentTime;
-    // Piercing shriek — high freq sweeping down fast
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const dist = ctx.createWaveShaper();
-    const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) { const x = (i * 2) / 256 - 1; curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x)); }
-    dist.curve = curve;
-    osc.type = "sawtooth";
-    const pitch = 520 + Math.random() * 200;
-    osc.frequency.setValueAtTime(pitch, t);
-    osc.frequency.exponentialRampToValueAtTime(pitch * 0.35, t + 0.55);
-    gain.gain.setValueAtTime(0.0, t);
-    gain.gain.linearRampToValueAtTime(0.28, t + 0.04);
-    gain.gain.setValueAtTime(0.28, t + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
-    osc.connect(dist);
-    dist.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + 0.65);
-    // second warble oscillator for creepy vibrato
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(pitch * 1.5, t);
-    osc2.frequency.exponentialRampToValueAtTime(pitch * 0.5, t + 0.55);
-    gain2.gain.setValueAtTime(0.0, t);
-    gain2.gain.linearRampToValueAtTime(0.12, t + 0.05);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(t);
-    osc2.stop(t + 0.65);
-  } catch {}
-}
 
 /* ── Timer ─────────────────────────────────────────────────────── */
 function fmt(ms: number): string {
@@ -637,8 +515,6 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       const sz = 72 + Math.random() * 20;
       const speed = (4.0 + Math.random() * 3.0) * s.diffMult;
       s.zombies.push({ x: Math.random() * (CW - sz), y: -sz, w: sz, h: sz, speed, hp: 1, flash: 0, phase: Math.random() * Math.PI * 2 });
-      if (Math.random() < 0.3) playZombieMoan();
-      if (Math.random() < 0.12) playZombieScream();
     }
 
     for (let i = s.zombies.length - 1; i >= 0; i--) {
@@ -695,8 +571,7 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
         const b = s.bullets[bi]; const z = s.zombies[zi];
         if (b && z && b.x > z.x - 8 && b.x < z.x + z.w + 8 && b.y > z.y && b.y < z.y + z.h) {
           spawnParticles(b.x, b.y);
-          playZombieHit();
-          playZombieDeath();
+
           s.zombies.splice(zi, 1);
           s.bullets.splice(bi, 1);
           s.pts += 10;
