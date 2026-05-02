@@ -5,6 +5,9 @@ import path from "path";
 
 export default defineConfig({
   base: "/",
+  define: {
+    __API_BASE__: JSON.stringify(""),
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
