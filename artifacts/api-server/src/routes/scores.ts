@@ -1,10 +1,10 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { db, scoresTable, tournamentsTable, usersTable, gameSessionsTable } from "@workspace/db";
 import { eq, and, lte, gte, desc, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth } from "../middlewares/auth.js";
 import { randomUUID } from "crypto";
 
-const router: IRouter = Router();
+const router = Router();
 
 const MAX_GAME_DURATION_MS = 75_000;
 const MAX_SCORE_PER_SECOND = 20;

@@ -1,11 +1,11 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { db, usersTable, tournamentsTable } from "@workspace/db";
 import { eq, or } from "drizzle-orm";
-import { signToken } from "../middlewares/auth";
+import { signToken } from "../middlewares/auth.js";
 import crypto from "crypto";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.post("/auth/login", async (req, res) => {
   const { discordUsername, password } = req.body as {

@@ -1,8 +1,8 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { db, tournamentsTable } from "@workspace/db";
 import { and, lte, gte, desc } from "drizzle-orm";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.get("/tournament/current", async (req, res) => {
   const now = new Date();
