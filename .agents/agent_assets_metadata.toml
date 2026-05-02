@@ -1,0 +1,31 @@
+uploads = []
+
+[[generated]]
+id = "-HuR3dnq5FHmlBiVia6-l"
+uri = "file://artifacts/zombie-shooter/public/assets/background.png"
+type = "image"
+title = "dark ocean zombie background"
+
+[[generated]]
+id = "8o8a75DpZ_Bbts1qVeV85"
+uri = "file://artifacts/zombie-shooter/public/assets/zombie.png"
+type = "image"
+title = "scary zombie sea creature sprite"
+
+[[generated]]
+id = "isYUEqF0bK_EBTplhp9ep"
+uri = "file://artifacts/zombie-shooter/public/assets/shooter.png"
+type = "image"
+title = "wizard seal shooter sprite"
+
+[[outputs]]
+id = "uyOrURWWkLx4hurcoPCv3"
+uri = "file://pacific-pod-zombie-shooter.zip"
+type = "unspecified"
+title = "Pacific Pod Zombie Shooter — Full Project"
+
+[[outputs]]
+id = "bQ5HRB3CeiNkxwjMk2mGk"
+uri = "file://pacific-pod-zombie-shooter.tar.gz"
+type = "unspecified"
+title = "pacific-pod-zombie-shooter.tar.gz — Vercel-ready build"
