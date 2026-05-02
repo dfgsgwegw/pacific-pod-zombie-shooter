@@ -671,12 +671,6 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       ctx.ellipse(0, 0, sw * 0.72, sh * 0.72, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // drop shadow on ground
-      ctx.fillStyle = "rgba(0,40,0,0.35)";
-      ctx.beginPath();
-      ctx.ellipse(0, sh * 0.46, sw * 0.38, sh * 0.1, 0, 0, Math.PI * 2);
-      ctx.fill();
-
       if (z.flash > 0) {
         ctx.globalAlpha = 0.45;
         z.flash--;
