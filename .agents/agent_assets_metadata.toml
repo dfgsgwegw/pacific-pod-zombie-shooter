@@ -10,46 +10,58 @@ title = "wizard otter back view shooter sprite"
 id = "wD0aSYxSenpAZXZtUyJfn"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/pod-mvp-shooter.png"
 type = "image"
-title = "POD MVP shooter sprite"
+title = "POD MVP upward shooting sprite"
 
 [[generated]]
 id = "cYl9Y_Apo_FcAdrSN7086"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/stone-pod-shooter.png"
 type = "image"
-title = "Stone Pod shooter sprite"
+title = "Stone Pod upward shooting sprite"
 
 [[generated]]
 id = "SGUx5DPIcIH6sI4y7uioV"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/fire-pod-shooter.png"
 type = "image"
-title = "Fire Pod shooter sprite"
+title = "Fire Pod upward shooting sprite"
 
 [[generated]]
 id = "D_2kiyk2mGYJLE3iMRDv6"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/squad-pod-shooter.png"
 type = "image"
-title = "Squad Pod shooter sprite"
+title = "Squad Pod upward shooting sprite"
+
+[[generated]]
+id = "d5OTvYjh_HCkDTybYyXD9"
+uri = "file://artifacts/zombie-shooter/public/assets/game-poster.png"
+type = "image"
+title = "Pacific Pods Zombie Shooter game poster"
 
 [[outputs]]
 id = "mG6al0jcp-3XRPpT7ykOL"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/pod-mvp-shooter.png"
 type = "image"
-title = "POD MVP — Shooter Sprite"
+title = "POD MVP — Shooting Up"
 
 [[outputs]]
 id = "TmnGkMitcbhA_gkEcKPo-"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/stone-pod-shooter.png"
 type = "image"
-title = "Stone Pod — Shooter Sprite"
+title = "Stone Pod — Shooting Up"
 
 [[outputs]]
 id = "FV7XapIfpsYTDlA8bVuM1"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/fire-pod-shooter.png"
 type = "image"
-title = "Fire Pod — Shooter Sprite"
+title = "Fire Pod — Shooting Up"
 
 [[outputs]]
 id = "K7gHePSza1ZjIWko00vaN"
 uri = "file://artifacts/zombie-shooter/public/assets/characters/squad-pod-shooter.png"
 type = "image"
-title = "Squad Pod — Shooter Sprite"
+title = "Squad Pod — Shooting Up"
+
+[[outputs]]
+id = "KageaVrTNisY8uo2yt5mw"
+uri = "file://artifacts/zombie-shooter/public/assets/game-poster.png"
+type = "image"
+title = "Pacific Pods Zombie Shooter — Game Poster"
