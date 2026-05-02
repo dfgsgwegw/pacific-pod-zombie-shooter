@@ -808,7 +808,7 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     backgroundPosition: "center",
   };
 
-  const SidebarContent = () => (
+  const renderSidebar = () => (
     <>
       {!loggedIn ? (
         <div className="flex flex-col h-full overflow-hidden rounded-lg border border-cyan-500/30" style={{ background: "rgba(0,20,30,0.92)" }}>
@@ -1177,13 +1177,13 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
         {/* Sidebar — desktop: always visible | mobile: overlay when showSidebar */}
         {!isMobile ? (
           <div className="w-44 sm:w-52 flex-shrink-0 min-h-0">
-            <SidebarContent />
+            {renderSidebar()}
           </div>
         ) : showSidebar ? (
           <div className="absolute inset-0 z-50 flex items-start justify-end p-2" style={{ background: "rgba(0,0,0,0.7)" }}
             onClick={e => { if (e.target === e.currentTarget) setShowSidebar(false); }}>
             <div className="w-64 max-h-full overflow-y-auto rounded-lg">
-              <SidebarContent />
+              {renderSidebar()}
             </div>
           </div>
         ) : null}

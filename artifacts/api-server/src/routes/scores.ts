@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 
 const router = Router();
 
-const MAX_GAME_DURATION_MS = 75_000;
+const MAX_GAME_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
 const MAX_SCORE_PER_SECOND = 20;
 
 router.post("/scores/start", requireAuth, async (req, res) => {
