@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm --filter @workspace/zombie-shooter run build:vercel",
   "outputDirectory": "artifacts/zombie-shooter/dist/public",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": null,
   "rewrites": [
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
