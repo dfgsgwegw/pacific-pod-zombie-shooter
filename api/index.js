@@ -5,7 +5,7 @@
  */
 import express from "express";
 import cors from "cors";
-import router from "../artifacts/api-server/src/routes/index";
+import router from "../artifacts/api-server/dist/routes.mjs";
 
 const app = express();
 
