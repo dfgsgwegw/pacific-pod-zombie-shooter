@@ -661,7 +661,7 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
             Logout
           </button>
         ) : (
-          <span className="text-cyan-400/40 text-xs flex-shrink-0">← login</span>
+          <span className="flex-shrink-0 w-12" />
         )}
       </div>
 
