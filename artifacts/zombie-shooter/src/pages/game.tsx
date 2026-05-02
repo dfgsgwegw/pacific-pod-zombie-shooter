@@ -206,6 +206,8 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
   const [loginLoading, setLoginLoading] = useState(false);
   const [devtoolsWarning, setDevtoolsWarning] = useState(false);
   const [playMode, setPlayMode] = useState<PlayMode>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const sessionTokenRef = useRef<string | null>(null);
 
@@ -245,6 +247,12 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     zombieImg.current.src = "/assets/zombie.png";
     bgImg.current.src = "/assets/background.png";
 
+    // Detect mobile/touch device
+    const mq = window.matchMedia("(max-width: 639px)");
+    const checkMobile = () => setIsMobile(mq.matches || navigator.maxTouchPoints > 0);
+    checkMobile();
+    mq.addEventListener("change", checkMobile);
+
     // init background bubbles
     const s = gs.current;
     for (let i = 0; i < 18; i++) {
@@ -266,7 +274,7 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       setScore(gs.current.pts);
       sessionTokenRef.current = null;
     });
-    return () => { clearInterval(lb); clearInterval(tr); stopDetect(); };
+    return () => { clearInterval(lb); clearInterval(tr); stopDetect(); mq.removeEventListener("change", checkMobile); };
   }, [fetchTournament, fetchLeaderboard]);
 
   useEffect(() => {
@@ -592,20 +600,21 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     playMagicShot();
   }
 
-  // Mobile touch movement
+  // Mobile touch movement (canvas tap = shoot)
   function handleTouchStart(e: React.TouchEvent<HTMLCanvasElement>) {
     if (gameState !== "playing") return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const touchX = (e.touches[0].clientX - rect.left) / rect.width * CW;
-    const s = gs.current;
-    if (touchX < CW / 2) { s.keys.left = true; s.keys.right = false; }
-    else { s.keys.right = true; s.keys.left = false; }
+    e.preventDefault();
     handleCanvasClick();
   }
 
   function handleTouchEnd() {
     gs.current.keys.left = false; gs.current.keys.right = false;
   }
+
+  // Mobile on-screen button handlers
+  function mobileLeft(active: boolean) { gs.current.keys.left = active; }
+  function mobileRight(active: boolean) { gs.current.keys.right = active; }
+  function mobileFire() { handleCanvasClick(); }
 
   async function handleSidebarLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -646,6 +655,64 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     backgroundPosition: "center",
   };
 
+  const SidebarContent = () => (
+    <>
+      {!loggedIn ? (
+        <div className="flex flex-col h-full overflow-hidden rounded-lg border border-cyan-500/30" style={{ background: "rgba(0,20,30,0.92)" }}>
+          <div className="px-3 py-2 border-b border-cyan-500/20 flex-shrink-0 flex items-center justify-between" style={{ background: "rgba(0,60,80,0.5)" }}>
+            <p className="text-cyan-400 font-black tracking-widest text-xs uppercase">🔐 Login to Play</p>
+            {isMobile && <button onClick={() => setShowSidebar(false)} className="text-white/40 text-lg leading-none">×</button>}
+          </div>
+          <form onSubmit={handleSidebarLogin} className="p-3 space-y-2.5 flex-shrink-0">
+            <div>
+              <label className="block text-cyan-400/70 text-[10px] font-bold mb-1 tracking-widest uppercase">Discord Username</label>
+              <input type="text" value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
+                placeholder="Username" required autoComplete="username"
+                className="w-full bg-black/60 border border-cyan-500/30 text-white placeholder-white/20 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400 transition" />
+            </div>
+            <div>
+              <label className="block text-cyan-400/70 text-[10px] font-bold mb-1 tracking-widest uppercase">Password</label>
+              <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
+                placeholder="••••••••" required autoComplete="current-password"
+                className="w-full bg-black/60 border border-cyan-500/30 text-white placeholder-white/20 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400 transition" />
+            </div>
+            {loginError && <p className="text-red-400 text-[10px] bg-red-900/20 border border-red-500/20 rounded p-1.5">{loginError}</p>}
+            <button type="submit" disabled={loginLoading}
+              className="w-full text-black font-black py-2 rounded text-xs tracking-widest uppercase transition disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)" }}>
+              {loginLoading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+          <div className="flex-1 overflow-y-auto border-t border-cyan-500/15">
+            <div className="px-3 py-1.5 border-b border-cyan-500/15" style={{ background: "rgba(0,40,60,0.4)" }}>
+              <p className="text-cyan-400/60 text-[10px] font-black tracking-widest uppercase">🌊 Leaderboard</p>
+            </div>
+            {leaderboard.length === 0 ? (
+              <div className="text-white/20 text-[10px] text-center py-4">🧟 No scores yet</div>
+            ) : leaderboard.map(e => (
+              <div key={e.discordUsername} className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/5">
+                <span className={`text-[10px] w-5 text-center flex-shrink-0 font-black ${RANK_COLOR[e.rank] ?? "text-white/40"}`}>
+                  {RANK_MEDAL[e.rank] ?? `#${e.rank}`}
+                </span>
+                <p className="flex-1 min-w-0 text-[10px] text-white/60 truncate">{e.discordUsername}</p>
+                <span className="text-yellow-400 font-black text-[10px] flex-shrink-0">{e.bestScore}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="h-full">
+          {isMobile && (
+            <div className="flex justify-end mb-1">
+              <button onClick={() => setShowSidebar(false)} className="text-white/40 text-lg leading-none px-2">×</button>
+            </div>
+          )}
+          <LiveLeaderboard entries={leaderboard} myUsername={user?.discordUsername ?? ""} tournament={tournament} />
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="flex flex-col bg-black text-white overflow-hidden" style={{ height: "100dvh", userSelect: "none" }}>
 
@@ -659,14 +726,23 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
           style={{ color: "#00d4ff", textShadow: "0 0 12px rgba(0,212,255,0.6)" }}>
           🌊 PACIFIC ZOMBIE FIGHTER
         </h1>
-        {loggedIn ? (
-          <button onClick={() => { clearAuth(); onLogout(); }}
-            className="text-white/30 text-xs hover:text-white/60 transition flex-shrink-0">
-            Logout
-          </button>
-        ) : (
-          <span className="flex-shrink-0 w-12" />
-        )}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Mobile sidebar toggle */}
+          {isMobile && (
+            <button onClick={() => setShowSidebar(v => !v)}
+              className="text-cyan-400/70 text-xs border border-cyan-500/30 px-2 py-0.5 rounded">
+              {loggedIn ? "🏆" : "🔐"}
+            </button>
+          )}
+          {loggedIn ? (
+            <button onClick={() => { clearAuth(); onLogout(); }}
+              className="text-white/30 text-xs hover:text-white/60 transition">
+              Logout
+            </button>
+          ) : (
+            !isMobile && <span className="w-12" />
+          )}
+        </div>
       </div>
 
       {/* Tournament banner */}
@@ -689,196 +765,175 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       )}
 
       {/* Main area */}
-      <div className="flex flex-1 min-h-0 gap-2 p-2">
+      <div className="flex flex-1 min-h-0 gap-2 p-2 relative">
 
         {/* Canvas area */}
-        <div className="flex-1 min-w-0 flex items-center justify-center min-h-0">
-          <div className="relative w-full"
-            style={{ aspectRatio: `${CW} / ${CH}`, maxHeight: "100%", maxWidth: `calc((100vh - 120px) * ${CW / CH})` }}>
+        <div className="flex-1 min-w-0 flex flex-col items-center justify-center min-h-0 gap-2">
+          <div className="relative w-full flex-1 min-h-0 flex items-center justify-center">
+            <div className="relative"
+              style={{ aspectRatio: `${CW} / ${CH}`, maxHeight: "100%", maxWidth: `calc((100dvh - 120px) * ${CW / CH})`, width: "100%" }}>
 
-            <canvas
-              ref={canvasRef}
-              width={CW} height={CH}
-              onClick={handleCanvasClick}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              style={{ display: gameState === "playing" ? "block" : "none", width: "100%", height: "100%", touchAction: "none" }}
-              className="rounded-lg cursor-crosshair"
-            />
+              <canvas
+                ref={canvasRef}
+                width={CW} height={CH}
+                onClick={handleCanvasClick}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                style={{ display: gameState === "playing" ? "block" : "none", width: "100%", height: "100%", touchAction: "none" }}
+                className="rounded-lg cursor-crosshair"
+              />
 
-            {/* Menu */}
-            {gameState === "menu" && (
-              <div className="absolute inset-0 rounded-lg flex items-center justify-center" style={overlayBg}>
-                <div className="absolute inset-0 rounded-lg" style={{ background: "rgba(0,5,15,0.72)" }} />
-                <div className="relative z-10 rounded-xl p-6 sm:p-10 text-center mx-4 border"
-                  style={{ background: "rgba(0,10,25,0.88)", borderColor: "rgba(0,200,255,0.35)", boxShadow: "0 0 40px rgba(0,200,255,0.15)" }}>
-                  <p className="text-xs font-bold tracking-widest mb-1" style={{ color: "rgba(0,200,255,0.6)" }}>PACIFIC POD NFT PRESENTS</p>
-                  <h2 className="text-3xl sm:text-4xl font-black tracking-widest mb-1"
-                    style={{ color: "#00d4ff", textShadow: "0 0 30px rgba(0,212,255,0.8)" }}>PACIFIC</h2>
-                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-widest mb-5">ZOMBIE FIGHTER</h3>
-                  <p className="text-white/40 text-xs sm:text-sm mb-6">
-                    <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">A</kbd>{" / "}
-                    <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">D</kbd>{" "}
-                    or arrows to move ·{" "}
-                    <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Click</kbd> to shoot
-                  </p>
-                  {/* Tournament / competitive play button */}
-                  {loggedIn && canPlay && (
-                    <button onClick={startGame}
-                      className="font-black px-8 py-3 rounded text-lg tracking-widest transition uppercase text-black mb-3 block w-full"
-                      style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)", boxShadow: "0 0 30px rgba(0,180,255,0.4)" }}>
-                      Enter the Deep
-                    </button>
-                  )}
-                  {loggedIn && !canPlay && (
-                    <div className="text-white/40 text-sm border border-white/10 px-6 py-3 rounded mb-3">
-                      {tournamentStatus === "upcoming" ? "Tournament hasn't started yet" : "No active tournament"}
-                    </div>
-                  )}
-
-                  {/* Demo mode — always available */}
-                  <button onClick={startDemoGame}
-                    className="font-black px-8 py-2.5 rounded text-base tracking-widest transition uppercase border w-full"
-                    style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(0,200,255,0.3)", color: "rgba(0,212,255,0.8)" }}>
-                    🎮 Play Demo
-                  </button>
-                  {!loggedIn && (
-                    <p className="text-white/25 text-xs mt-2">Scores not saved · <span className="text-cyan-500/50">Login</span> to compete</p>
-                  )}
+              {/* Mobile on-screen controls — shown during gameplay */}
+              {gameState === "playing" && isMobile && (
+                <div className="absolute bottom-2 left-0 right-0 flex items-center justify-between px-3 pointer-events-none z-10">
+                  {/* Left button */}
+                  <button
+                    className="pointer-events-auto rounded-full flex items-center justify-center font-black text-2xl select-none active:scale-90 transition-transform"
+                    style={{ width: 72, height: 72, background: "rgba(0,180,255,0.25)", border: "2px solid rgba(0,212,255,0.5)", color: "#00d4ff", WebkitTapHighlightColor: "transparent" }}
+                    onPointerDown={() => mobileLeft(true)}
+                    onPointerUp={() => mobileLeft(false)}
+                    onPointerLeave={() => mobileLeft(false)}
+                  >◀</button>
+                  {/* Fire button */}
+                  <button
+                    className="pointer-events-auto rounded-full flex items-center justify-center font-black text-2xl select-none active:scale-90 transition-transform"
+                    style={{ width: 80, height: 80, background: "rgba(255,50,50,0.25)", border: "2px solid rgba(255,80,80,0.6)", color: "#ff6060", WebkitTapHighlightColor: "transparent" }}
+                    onPointerDown={mobileFire}
+                  >🔫</button>
+                  {/* Right button */}
+                  <button
+                    className="pointer-events-auto rounded-full flex items-center justify-center font-black text-2xl select-none active:scale-90 transition-transform"
+                    style={{ width: 72, height: 72, background: "rgba(0,180,255,0.25)", border: "2px solid rgba(0,212,255,0.5)", color: "#00d4ff", WebkitTapHighlightColor: "transparent" }}
+                    onPointerDown={() => mobileRight(true)}
+                    onPointerUp={() => mobileRight(false)}
+                    onPointerLeave={() => mobileRight(false)}
+                  >▶</button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Game Over */}
-            {gameState === "over" && (
-              <div className="absolute inset-0 rounded-lg flex items-center justify-center" style={overlayBg}>
-                <div className="absolute inset-0 rounded-lg" style={{ background: "rgba(0,0,10,0.8)" }} />
-                <div className="relative z-10 rounded-xl p-6 sm:p-10 text-center w-72 sm:w-80 border"
-                  style={{ background: "rgba(0,5,20,0.92)", borderColor: "rgba(255,50,50,0.35)" }}>
-                  <h2 className="text-3xl sm:text-4xl font-black tracking-widest mb-2 text-red-400">GAME OVER</h2>
-                  <p className="text-5xl sm:text-6xl font-black text-yellow-400 my-3">{score}</p>
-                  <p className="text-white/40 text-sm mb-5">Final Score</p>
-
-                  {devtoolsWarning && (
-                    <p className="text-red-400 text-xs mb-4 bg-red-900/20 border border-red-500/20 rounded p-2">
-                      Score invalidated — DevTools detected.
-                    </p>
-                  )}
-
-                  {playMode === "demo" ? (
-                    <div className="mb-4">
-                      <p className="text-white/40 text-xs mb-3 border border-white/10 rounded px-3 py-2">
-                        🎮 Demo mode — score not saved
+              {/* Menu */}
+              {gameState === "menu" && (
+                <div className="absolute inset-0 rounded-lg flex items-center justify-center" style={overlayBg}>
+                  <div className="absolute inset-0 rounded-lg" style={{ background: "rgba(0,5,15,0.72)" }} />
+                  <div className="relative z-10 rounded-xl p-5 sm:p-10 text-center mx-4 border"
+                    style={{ background: "rgba(0,10,25,0.88)", borderColor: "rgba(0,200,255,0.35)", boxShadow: "0 0 40px rgba(0,200,255,0.15)" }}>
+                    <p className="text-xs font-bold tracking-widest mb-1" style={{ color: "rgba(0,200,255,0.6)" }}>PACIFIC POD NFT PRESENTS</p>
+                    <h2 className="text-3xl sm:text-4xl font-black tracking-widest mb-1"
+                      style={{ color: "#00d4ff", textShadow: "0 0 30px rgba(0,212,255,0.8)" }}>PACIFIC</h2>
+                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-widest mb-4">ZOMBIE FIGHTER</h3>
+                    {isMobile ? (
+                      <p className="text-white/40 text-xs mb-5">
+                        Use ◀ ▶ buttons to move · 🔫 to shoot
                       </p>
-                      {!loggedIn && (
-                        <p className="text-cyan-400/60 text-xs mb-3">Login to compete on the leaderboard!</p>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      {!submitted && !devtoolsWarning && sessionTokenRef.current && (
-                        <button onClick={submitScore} disabled={submitting}
-                          className="w-full disabled:opacity-50 text-black font-black py-2.5 rounded tracking-widest uppercase mb-3 transition"
-                          style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)" }}>
-                          {submitting ? "Saving..." : "Submit Score"}
-                        </button>
-                      )}
-                      {submitted && <p className="text-cyan-400 font-bold mb-3">✓ Score submitted!</p>}
-                      {submitError && <p className="text-red-400 text-xs mb-3">{submitError}</p>}
-                    </>
-                  )}
-
-                  {/* Play again buttons */}
-                  {playMode === "demo" ? (
-                    <button onClick={startDemoGame}
-                      className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded tracking-wider uppercase text-sm transition mb-2">
-                      Play Again (Demo)
-                    </button>
-                  ) : (
-                    canPlay && !devtoolsWarning && (
+                    ) : (
+                      <p className="text-white/40 text-xs sm:text-sm mb-5">
+                        <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">A</kbd>{" / "}
+                        <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">D</kbd>{" "}
+                        or arrows to move ·{" "}
+                        <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Click</kbd> to shoot
+                      </p>
+                    )}
+                    {loggedIn && canPlay && (
                       <button onClick={startGame}
-                        className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded tracking-wider uppercase text-sm transition mb-2">
-                        Play Again
+                        className="font-black px-8 py-3 rounded text-lg tracking-widest transition uppercase text-black mb-3 block w-full"
+                        style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)", boxShadow: "0 0 30px rgba(0,180,255,0.4)" }}>
+                        Enter the Deep
                       </button>
-                    )
-                  )}
-                  <button onClick={() => { setGameState("menu"); setPlayMode(null); }}
-                    className="w-full bg-white/5 hover:bg-white/10 text-white/40 font-bold py-1.5 rounded tracking-wider uppercase text-xs transition">
-                    Back to Menu
-                  </button>
+                    )}
+                    {loggedIn && !canPlay && (
+                      <div className="text-white/40 text-sm border border-white/10 px-6 py-3 rounded mb-3">
+                        {tournamentStatus === "upcoming" ? "Tournament hasn't started yet" : "No active tournament"}
+                      </div>
+                    )}
+                    <button onClick={startDemoGame}
+                      className="font-black px-8 py-2.5 rounded text-base tracking-widest transition uppercase border w-full"
+                      style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(0,200,255,0.3)", color: "rgba(0,212,255,0.8)" }}>
+                      🎮 Play Demo
+                    </button>
+                    {!loggedIn && (
+                      <p className="text-white/25 text-xs mt-2">
+                        Scores not saved ·{" "}
+                        <span className="text-cyan-500/50" onClick={() => setShowSidebar(true)} style={{ cursor: "pointer" }}>Login</span>{" "}
+                        to compete
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Game Over */}
+              {gameState === "over" && (
+                <div className="absolute inset-0 rounded-lg flex items-center justify-center" style={overlayBg}>
+                  <div className="absolute inset-0 rounded-lg" style={{ background: "rgba(0,0,10,0.8)" }} />
+                  <div className="relative z-10 rounded-xl p-5 sm:p-10 text-center w-72 sm:w-80 border"
+                    style={{ background: "rgba(0,5,20,0.92)", borderColor: "rgba(255,50,50,0.35)" }}>
+                    <h2 className="text-3xl sm:text-4xl font-black tracking-widest mb-2 text-red-400">GAME OVER</h2>
+                    <p className="text-5xl sm:text-6xl font-black text-yellow-400 my-3">{score}</p>
+                    <p className="text-white/40 text-sm mb-5">Final Score</p>
+                    {devtoolsWarning && (
+                      <p className="text-red-400 text-xs mb-4 bg-red-900/20 border border-red-500/20 rounded p-2">
+                        Score invalidated — DevTools detected.
+                      </p>
+                    )}
+                    {playMode === "demo" ? (
+                      <div className="mb-4">
+                        <p className="text-white/40 text-xs mb-3 border border-white/10 rounded px-3 py-2">
+                          🎮 Demo mode — score not saved
+                        </p>
+                        {!loggedIn && (
+                          <p className="text-cyan-400/60 text-xs mb-3">Login to compete on the leaderboard!</p>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {!submitted && !devtoolsWarning && sessionTokenRef.current && (
+                          <button onClick={submitScore} disabled={submitting}
+                            className="w-full disabled:opacity-50 text-black font-black py-2.5 rounded tracking-widest uppercase mb-3 transition"
+                            style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)" }}>
+                            {submitting ? "Saving..." : "Submit Score"}
+                          </button>
+                        )}
+                        {submitted && <p className="text-cyan-400 font-bold mb-3">✓ Score submitted!</p>}
+                        {submitError && <p className="text-red-400 text-xs mb-3">{submitError}</p>}
+                      </>
+                    )}
+                    {playMode === "demo" ? (
+                      <button onClick={startDemoGame}
+                        className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded tracking-wider uppercase text-sm transition mb-2">
+                        Play Again (Demo)
+                      </button>
+                    ) : (
+                      canPlay && !devtoolsWarning && (
+                        <button onClick={startGame}
+                          className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded tracking-wider uppercase text-sm transition mb-2">
+                          Play Again
+                        </button>
+                      )
+                    )}
+                    <button onClick={() => { setGameState("menu"); setPlayMode(null); }}
+                      className="w-full bg-white/5 hover:bg-white/10 text-white/40 font-bold py-1.5 rounded tracking-wider uppercase text-xs transition">
+                      Back to Menu
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Sidebar — login form when logged out, leaderboard when logged in */}
-        <div className="w-44 sm:w-52 flex-shrink-0 min-h-0">
-          {!loggedIn ? (
-            <div className="flex flex-col h-full overflow-hidden rounded-lg border border-cyan-500/30" style={{ background: "rgba(0,20,30,0.92)" }}>
-              {/* Login form */}
-              <div className="px-3 py-2 border-b border-cyan-500/20 flex-shrink-0" style={{ background: "rgba(0,60,80,0.5)" }}>
-                <p className="text-cyan-400 font-black tracking-widest text-xs uppercase">🔐 Login to Play</p>
-              </div>
-              <form onSubmit={handleSidebarLogin} className="p-3 space-y-2.5 flex-shrink-0">
-                <div>
-                  <label className="block text-cyan-400/70 text-[10px] font-bold mb-1 tracking-widest uppercase">Discord Username</label>
-                  <input
-                    type="text"
-                    value={loginUsername}
-                    onChange={e => setLoginUsername(e.target.value)}
-                    placeholder="Username"
-                    required
-                    autoComplete="username"
-                    className="w-full bg-black/60 border border-cyan-500/30 text-white placeholder-white/20 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400 transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-cyan-400/70 text-[10px] font-bold mb-1 tracking-widest uppercase">Password</label>
-                  <input
-                    type="password"
-                    value={loginPassword}
-                    onChange={e => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    autoComplete="current-password"
-                    className="w-full bg-black/60 border border-cyan-500/30 text-white placeholder-white/20 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400 transition"
-                  />
-                </div>
-                {loginError && (
-                  <p className="text-red-400 text-[10px] bg-red-900/20 border border-red-500/20 rounded p-1.5">{loginError}</p>
-                )}
-                <button
-                  type="submit"
-                  disabled={loginLoading}
-                  className="w-full text-black font-black py-2 rounded text-xs tracking-widest uppercase transition disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)" }}
-                >
-                  {loginLoading ? "Logging in..." : "Login"}
-                </button>
-              </form>
-              {/* Mini leaderboard below login */}
-              <div className="flex-1 overflow-y-auto border-t border-cyan-500/15">
-                <div className="px-3 py-1.5 border-b border-cyan-500/15" style={{ background: "rgba(0,40,60,0.4)" }}>
-                  <p className="text-cyan-400/60 text-[10px] font-black tracking-widest uppercase">🌊 Leaderboard</p>
-                </div>
-                {leaderboard.length === 0 ? (
-                  <div className="text-white/20 text-[10px] text-center py-4">🧟 No scores yet</div>
-                ) : leaderboard.map(e => (
-                  <div key={e.discordUsername} className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/5">
-                    <span className={`text-[10px] w-5 text-center flex-shrink-0 font-black ${RANK_COLOR[e.rank] ?? "text-white/40"}`}>
-                      {RANK_MEDAL[e.rank] ?? `#${e.rank}`}
-                    </span>
-                    <p className="flex-1 min-w-0 text-[10px] text-white/60 truncate">{e.discordUsername}</p>
-                    <span className="text-yellow-400 font-black text-[10px] flex-shrink-0">{e.bestScore}</span>
-                  </div>
-                ))}
-              </div>
+        {/* Sidebar — desktop: always visible | mobile: overlay when showSidebar */}
+        {!isMobile ? (
+          <div className="w-44 sm:w-52 flex-shrink-0 min-h-0">
+            <SidebarContent />
+          </div>
+        ) : showSidebar ? (
+          <div className="absolute inset-0 z-50 flex items-start justify-end p-2" style={{ background: "rgba(0,0,0,0.7)" }}
+            onClick={e => { if (e.target === e.currentTarget) setShowSidebar(false); }}>
+            <div className="w-64 max-h-full overflow-y-auto rounded-lg">
+              <SidebarContent />
             </div>
-          ) : (
-            <LiveLeaderboard entries={leaderboard} myUsername={user?.discordUsername ?? ""} tournament={tournament} />
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
