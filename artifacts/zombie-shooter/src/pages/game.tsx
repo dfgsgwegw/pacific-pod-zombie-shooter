@@ -265,7 +265,18 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     if (!tournament) return;
     const startMs = new Date(tournament.startTime).getTime();
     const endMs = new Date(tournament.endTime).getTime();
+    const syncTournamentStatus = () => {
+      const now = Date.now();
+      if (now < startMs) {
+        setTournamentStatus("upcoming");
+      } else if (now <= endMs) {
+        setTournamentStatus("active");
+      } else {
+        setTournamentStatus("ended");
+      }
+    };
     const tick = () => {
+      syncTournamentStatus();
       const targetMs = tournamentStatus === "upcoming" ? startMs : endMs;
       setTimeLeft(fmt(Math.max(0, targetMs - Date.now())));
     };
