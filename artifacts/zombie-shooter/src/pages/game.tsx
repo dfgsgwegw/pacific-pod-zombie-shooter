@@ -297,12 +297,8 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
           setGameState("over");
           setTournamentEndedWhilePlaying(true);
           if (token) {
-            try {
-              await api.submitScore(pts, token);
-              sessionTokenRef.current = null;
-              setSubmitted(true);
-              fetchLeaderboard();
-            } catch {}
+            sessionTokenRef.current = token;
+            await autoSubmitScore();
           }
         }
       }, remaining);
@@ -800,10 +796,10 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     }
   }
 
-  async function submitScore() {
+  async function autoSubmitScore() {
     const token = sessionTokenRef.current;
-    if (!token) { setSubmitError("No valid session."); return; }
-    setSubmitting(true); setSubmitError("");
+    if (!token || submitted) return;
+    setSubmitting(true);
     try {
       await api.submitScore(gs.current.pts, token);
       sessionTokenRef.current = null;
@@ -811,8 +807,9 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
       fetchLeaderboard();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Failed to submit score");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   const user = getAuth();
@@ -1160,19 +1157,7 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
                           <p className="text-cyan-400/60 text-xs mb-3">Login to compete on the leaderboard!</p>
                         )}
                       </div>
-                    ) : (
-                      <>
-                        {!submitted && !devtoolsWarning && sessionTokenRef.current && (
-                          <button onClick={submitScore} disabled={submitting}
-                            className="w-full disabled:opacity-50 text-black font-black py-2.5 rounded tracking-widest uppercase mb-3 transition"
-                            style={{ background: "linear-gradient(135deg, #00d4ff, #0080ff)" }}>
-                            {submitting ? "Saving..." : "Submit Score"}
-                          </button>
-                        )}
-                        {submitted && <p className="text-cyan-400 font-bold mb-3">✓ Score submitted automatically!</p>}
-                        {submitError && <p className="text-red-400 text-xs mb-3">{submitError}</p>}
-                      </>
-                    )}
+                    ) : null}
                     {playMode === "demo" ? (
                       <button onClick={startDemoGame}
                         className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded tracking-wider uppercase text-sm transition mb-2">
