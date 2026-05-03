@@ -1,13 +1,10 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { db, scoresTable, tournamentsTable, usersTable, gameSessionsTable } from "@workspace/db";
 import { eq, and, lte, gte, desc, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth } from "../middlewares/auth.js";
 import { randomUUID } from "crypto";
 
-const router: IRouter = Router();
-
-const MAX_GAME_DURATION_MS = 75_000;
-const MAX_SCORE_PER_SECOND = 20;
+const router = Router();
 
 router.post("/scores/start", requireAuth, async (req, res) => {
   const user = req.user!;
@@ -72,20 +69,6 @@ router.post("/scores", requireAuth, async (req, res) => {
     return;
   }
 
-  const now = Date.now();
-  const elapsed = now - session.startedAt.getTime();
-
-  if (elapsed > MAX_GAME_DURATION_MS) {
-    res.status(400).json({ error: "Session expired" });
-    return;
-  }
-
-  const maxPossible = Math.ceil((elapsed / 1000) * MAX_SCORE_PER_SECOND);
-  if (score > maxPossible) {
-    res.status(400).json({ error: "Score exceeds what is achievable" });
-    return;
-  }
-
   await db
     .update(gameSessionsTable)
     .set({ submitted: true })
@@ -135,7 +118,8 @@ router.get("/leaderboard", async (_req, res) => {
     .innerJoin(usersTable, eq(scoresTable.userId, usersTable.id))
     .where(eq(scoresTable.tournamentId, targetTournament.id))
     .groupBy(usersTable.discordUsername)
-    .orderBy(sql`MAX(${scoresTable.score}) DESC`);
+    .orderBy(sql`MAX(${scoresTable.score}) DESC`)
+    .limit(50);
 
   res.json({ tournament: targetTournament, leaderboard });
 });

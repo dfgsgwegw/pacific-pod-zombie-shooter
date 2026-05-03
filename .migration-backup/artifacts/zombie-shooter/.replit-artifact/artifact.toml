@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Zombie Shooter"
+title = "Pacific Zombie Fighter"
 version = "1.0.0"
 id = "artifacts/zombie-shooter"
 router = "path"

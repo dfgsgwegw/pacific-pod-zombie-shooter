@@ -5,6 +5,7 @@ import { z } from "zod";
 export const tournamentsTable = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  joinPassword: text("join_password").notNull().default(""),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

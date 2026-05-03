@@ -25,7 +25,6 @@ export default function App() {
     setRoute(getRoute());
   }
 
-  // Admin always requires login
   if (route === "admin") {
     if (!loggedIn) {
       return <LoginPage onLogin={() => setLoggedIn(true)} adminMode={true} />;
@@ -40,7 +39,7 @@ export default function App() {
             onClick={() => navigate("/")}
             className="text-green-400 text-sm border border-green-500/30 px-4 py-2 rounded hover:border-green-400 transition mt-2"
           >
-            ← Back to Game
+            Back to Game
           </button>
         </div>
       );
@@ -48,7 +47,6 @@ export default function App() {
     return <AdminPage onBack={() => navigate("/")} />;
   }
 
-  // Game is always visible — login lives in the sidebar
   return (
     <GamePage
       loggedIn={loggedIn}

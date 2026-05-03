@@ -64,6 +64,14 @@ export default function LoginPage({ onLogin, adminMode = false }: Props) {
             </div>
           )}
 
+          {!adminMode && (
+            <div className="mb-5 p-3 bg-green-500/10 border border-green-500/20 rounded text-center">
+              <p className="text-green-400 text-xs tracking-wide">
+                Enter your Discord username and the tournament password provided by the organiser
+              </p>
+            </div>
+          )}
+
           <div className="mb-5">
             <label className="block text-green-400 text-sm font-bold mb-2 tracking-widest uppercase">
               Discord Username
@@ -72,7 +80,7 @@ export default function LoginPage({ onLogin, adminMode = false }: Props) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={adminMode ? "admin" : "YourName#1234"}
+              placeholder={adminMode ? "admin" : "YourDiscordName"}
               required
               autoComplete="username"
               className="w-full bg-black/60 border border-green-500/40 text-white placeholder-green-900 rounded px-4 py-3 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400/50 transition"
@@ -81,7 +89,7 @@ export default function LoginPage({ onLogin, adminMode = false }: Props) {
 
           <div className="mb-6">
             <label className="block text-green-400 text-sm font-bold mb-2 tracking-widest uppercase">
-              Password
+              {adminMode ? "Password" : "Tournament Password"}
             </label>
             <input
               type="password"
@@ -92,6 +100,11 @@ export default function LoginPage({ onLogin, adminMode = false }: Props) {
               autoComplete="current-password"
               className="w-full bg-black/60 border border-green-500/40 text-white placeholder-green-900 rounded px-4 py-3 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400/50 transition"
             />
+            {!adminMode && (
+              <p className="text-white/30 text-xs mt-1">
+                The password is specific to each tournament
+              </p>
+            )}
           </div>
 
           {error && (
@@ -105,7 +118,7 @@ export default function LoginPage({ onLogin, adminMode = false }: Props) {
             disabled={loading}
             className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-black py-3 rounded tracking-widest text-lg transition-all hover:shadow-[0_0_20px_rgba(74,222,128,0.5)] uppercase"
           >
-            {loading ? "Logging in..." : adminMode ? "Access Admin Panel" : "Enter Tournament"}
+            {loading ? "Logging in..." : adminMode ? "Access Admin Panel" : "Join Tournament"}
           </button>
         </form>
       </div>
