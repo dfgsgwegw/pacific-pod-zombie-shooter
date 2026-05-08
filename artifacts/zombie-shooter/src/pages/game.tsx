@@ -200,7 +200,6 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     hp: 100,
     dead: false,
     animId: 0,
-    gen: 0,
     frame: 0,
     lastShot: 0,
     diffMult: 1,
@@ -321,8 +320,6 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
   async function startGame() {
     try { const { sessionToken } = await api.startSession(); sessionTokenRef.current = sessionToken; } catch { return; }
     const s = gs.current;
-    cancelAnimationFrame(s.animId);
-    s.gen++;
     s.shooter = { x: CW / 2 - 48, y: CH - 110, w: 96, h: 96, speed: 14 };
     s.bullets = []; s.zombies = []; s.particles = [];
     s.keys = { a: false, d: false, left: false, right: false };
@@ -332,15 +329,13 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     setTournamentEndedWhilePlaying(false);
     setPlayMode("tournament");
     setGameState("playing");
-    s.animId = requestAnimationFrame(makeLoop(s.gen));
+    requestAnimationFrame(loop);
   }
 
   function startDemoGame() {
     if (loggedIn) return;
     sessionTokenRef.current = null;
     const s = gs.current;
-    cancelAnimationFrame(s.animId);
-    s.gen++;
     s.shooter = { x: CW / 2 - 48, y: CH - 110, w: 96, h: 96, speed: 14 };
     s.bullets = []; s.zombies = []; s.particles = [];
     s.keys = { a: false, d: false, left: false, right: false };
@@ -349,7 +344,7 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     setSubmitted(false); setSubmitError(""); setDevtoolsWarning(false);
     setPlayMode("demo");
     setGameState("playing");
-    s.animId = requestAnimationFrame(makeLoop(s.gen));
+    requestAnimationFrame(loop);
   }
 
   function spawnParticles(x: number, y: number) {
@@ -517,17 +512,15 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
     ctx.fillText(`${hp}%`, CW - 178 + barW / 2 - 14, 47);
   }
 
-  function makeLoop(gen: number) {
-    function loop(now: number) {
+  function loop(now: number) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
     const s = gs.current;
-    if (s.gen !== gen) return;
     if (s.dead) { setGameState("over"); setScore(s.pts); return; }
 
-    // Delta time: cap at 1.5 so API polling in tournament mode can't cause speed bursts
-    const dt = s.lastFrameTime === 0 ? 1 : Math.min((now - s.lastFrameTime) / 16.667, 1.5);
+    // Delta time: scale all movement by elapsed time so speed is frame-rate independent
+    const dt = s.lastFrameTime === 0 ? 1 : Math.min((now - s.lastFrameTime) / 16.667, 3);
     s.lastFrameTime = now;
 
     s.frame++;
@@ -752,8 +745,6 @@ export default function GamePage({ onLogout, loggedIn = true, onLogin }: Props) 
 
     if (s.hp <= 0) { s.dead = true; setScore(s.pts); setGameState("over"); return; }
     s.animId = requestAnimationFrame(loop);
-    }
-    return loop;
   }
 
   useEffect(() => {
